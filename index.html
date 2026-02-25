@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Etiquetador Impressora Knup - 2 Colunas</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+    <div class="container no-print">
+        <header>
+            <h1>🏷️ Etiquetador Visual Mercado</h1>
+            <p>Ajustado para 80x25mm (2 colunas). Tamanho 4x2.5 cm</p>
+        </header>
+
+        <textarea id="zplInput" placeholder="Cole o código ZPL aqui..."></textarea>
+        
+        <div class="actions">
+            <button onclick="gerarEtiquetas()">Gerar e Imprimir</button>
+            <button class="btn-secondary" onclick="window.location.reload()">Limpar</button>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <div id="print-area"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
