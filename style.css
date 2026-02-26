@@ -117,6 +117,52 @@ button {
         margin-top: 0.5mm;
     }
 }
+/* style.css */
+
+/* Estilo do Rodapé Educativo */
+.guia-configuracao {
+    margin-top: 50px;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+
+.guia-configuracao h3 {
+    color: #1e40af;
+    text-align: center;
+}
+
+.flex-guia {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.img-manual {
+    max-width: 450px; /* Tamanho bom para visualização */
+    border: 2px solid #ddd;
+    border-radius: 5px;
+}
+
+.check-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.check-list li {
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+/* REGRA DE OURO: Esconde tudo isso na hora de imprimir as etiquetas */
+@media print {
+    .no-print, .guia-configuracao {
+        display: none !important;
+    }
+}
 
 #print-area {
     display: none;
