@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <title>Etiquetador Impressora Knup - 2 Colunas</title>
-    
+
     <link rel="icon" type="image/png" href="imagens/logo.png">
 
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
+
 <body>
     <div class="container no-print">
         <header>
@@ -18,11 +20,31 @@
         </header>
 
         <textarea id="zplInput" placeholder="Cole o código ZPL aqui..."></textarea>
-        
+
         <div class="actions">
             <button onclick="gerarEtiquetas()">Gerar e Imprimir</button>
             <button class="btn-secondary" onclick="window.location.reload()">Limpar</button>
+
         </div>
+        <footer class="guia-configuracao no-print">
+            <hr>
+            <h3>⚙️ Configuração Obrigatória da Impressora</h3>
+            <p>Para evitar saltos de etiqueta e garantir a leitura do código, configure seu driver exatamente assim:</p>
+
+            <div class="flex-guia">
+                <img src="imagens/config-driver.png" alt="Configuração do Driver Knup" class="img-manual">
+
+                <div class="check-list">
+                    <ul>
+                        <li>✅ <b>Paper Size:</b> 80x25_2col</li>
+                        <li>✅ <b>Density:</b> 12 ou 15 (para preto forte)</li>
+                        <li>✅ <b>Speed:</b> 5 (para maior precisão)</li>
+                        <li>✅ <b>Verticality:</b> -1.00 mm (ajusta o topo)</li>
+                        <li>✅ <b>Escala no Navegador:</b> Tamanho Real (100%)</li>
+                    </ul>
+                </div>
+            </div>
+        </footer>
         <div id="status"></div>
     </div>
 
@@ -30,4 +52,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
