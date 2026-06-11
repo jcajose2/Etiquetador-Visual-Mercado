@@ -43,7 +43,7 @@ function gerarEtiquetas() {
             if (i + j < quantidade) {
                 const label = document.createElement('div');
                 label.className = 'etiqueta-individual';
-                
+
                 const idCanvas = `bc-${i}-${j}`;
                 label.innerHTML = `
                     <svg id="${idCanvas}" class="barcode"></svg>
@@ -53,7 +53,7 @@ function gerarEtiquetas() {
                 `;
                 linha.appendChild(label);
 
-  
+
                 setTimeout(() => {
                     JsBarcode(`#${idCanvas}`, barcodeValue, {
                         format: "CODE128",
@@ -68,6 +68,77 @@ function gerarEtiquetas() {
         printArea.appendChild(linha);
     }
 
-    // 3. Comando de impressão
     setTimeout(() => { window.print(); }, 500);
+}
+
+function mostrarTela(tipo) {
+    const telaZpl = document.getElementById('tela-zpl');
+    const telaTexto = document.getElementById('tela-texto');
+    const tabZpl = document.getElementById('tab-zpl');
+    const tabTexto = document.getElementById('tab-texto');
+
+    const telaTextoAtiva = tipo === 'texto';
+
+    telaZpl.classList.toggle('active', !telaTextoAtiva);
+    telaTexto.classList.toggle('active', telaTextoAtiva);
+    tabZpl.classList.toggle('active', !telaTextoAtiva);
+    tabTexto.classList.toggle('active', telaTextoAtiva);
+
+    limparStatus();
+}
+
+function limparTextoLivre() {
+    document.getElementById('textoLivre').value = "";
+    document.getElementById('quantidadeTexto').value = 1;
+    document.getElementById('print-area').innerHTML = "";
+    limparStatus();
+}
+
+function limparStatus() {
+    const status = document.getElementById('status');
+    if (status) status.textContent = "";
+}
+
+function exibirStatus(mensagem) {
+    const status = document.getElementById('status');
+    if (status) status.textContent = mensagem;
+}
+
+function gerarEtiquetasTextoLivre() {
+    const texto = document.getElementById('textoLivre').value.trim();
+    const quantidadeCampo = document.getElementById('quantidadeTexto');
+    const quantidade = Math.min(500, Math.max(1, parseInt(quantidadeCampo.value, 10) || 1));
+    const printArea = document.getElementById('print-area');
+
+    if (!texto) {
+        exibirStatus("Digite a informacao que deseja imprimir.");
+        return;
+    }
+
+    quantidadeCampo.value = quantidade;
+    printArea.innerHTML = "";
+
+    for (let i = 0; i < quantidade; i += 2) {
+        const linha = document.createElement('div');
+        linha.className = 'etiqueta-linha';
+
+        for (let j = 0; j < 2; j++) {
+            if (i + j < quantidade) {
+                const label = document.createElement('div');
+                const conteudo = document.createElement('div');
+
+                label.className = 'etiqueta-individual etiqueta-texto-livre';
+                conteudo.className = 'txt-livre';
+                conteudo.textContent = texto;
+
+                label.appendChild(conteudo);
+                linha.appendChild(label);
+            }
+        }
+
+        printArea.appendChild(linha);
+    }
+
+    limparStatus();
+    setTimeout(() => { window.print(); }, 300);
 }

@@ -44,6 +44,53 @@ button {
     background: #64748b;
 }
 
+.menu-telas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 18px 0;
+}
+
+.tab-btn {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.tab-btn.active {
+    background: #2563eb;
+    color: white;
+}
+
+.tela {
+    display: none;
+}
+
+.tela.active {
+    display: block;
+}
+
+label {
+    display: block;
+    margin: 12px 0 6px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+input[type="number"] {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+#status {
+    margin-top: 12px;
+    color: #b91c1c;
+    font-weight: 700;
+}
+
 
 @media print {
     .no-print, .guia-configuracao {
@@ -92,6 +139,19 @@ button {
     .txt-codigo { font-size: 8pt; font-weight: bold; margin: 0.5mm 0; }
     .txt-desc { font-size: 6pt; line-height: 1.1; margin: 0; max-height: 7mm; overflow: hidden; word-wrap: break-word; }
     .txt-sku { font-size: 7pt; font-weight: bold; margin-top: 0.5mm; }
+
+    .etiqueta-texto-livre {
+        justify-content: center;
+    }
+
+    .txt-livre {
+        width: 100%;
+        font-size: 14pt;
+        font-weight: 800;
+        line-height: 1.15;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
 }
 
 
