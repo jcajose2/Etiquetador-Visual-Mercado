@@ -17,12 +17,32 @@
             <p>Ajustado para 80x25mm (2 colunas). Tamanho 4x2.5 cm</p>
         </header>
 
-        <textarea id="zplInput" placeholder="Cole o código ZPL aqui..."></textarea>
-
-        <div class="actions">
-            <button onclick="gerarEtiquetas()">Gerar e Imprimir</button>
-            <button class="btn-secondary" onclick="window.location.reload()">Limpar</button>
+        <div class="menu-telas" role="tablist" aria-label="Tipo de etiqueta">
+            <button id="tab-zpl" class="tab-btn active" type="button" onclick="mostrarTela('zpl')">ZPL Mercado</button>
+            <button id="tab-texto" class="tab-btn" type="button" onclick="mostrarTela('texto')">Texto livre</button>
         </div>
+
+        <section id="tela-zpl" class="tela active">
+            <textarea id="zplInput" placeholder="Cole o código ZPL aqui..."></textarea>
+
+            <div class="actions">
+                <button onclick="gerarEtiquetas()">Gerar e Imprimir</button>
+                <button class="btn-secondary" onclick="window.location.reload()">Limpar</button>
+            </div>
+        </section>
+
+        <section id="tela-texto" class="tela">
+            <label for="textoLivre">Informação para imprimir</label>
+            <textarea id="textoLivre" placeholder="Ex: Nota fiscal 1511"></textarea>
+
+            <label for="quantidadeTexto">Quantidade de etiquetas</label>
+            <input id="quantidadeTexto" type="number" min="1" max="500" value="1">
+
+            <div class="actions">
+                <button onclick="gerarEtiquetasTextoLivre()">Gerar e Imprimir</button>
+                <button class="btn-secondary" onclick="limparTextoLivre()">Limpar</button>
+            </div>
+        </section>
 
         <footer class="guia-configuracao no-print">
             <hr>
@@ -58,4 +78,3 @@
 </body>
 
 </html>
-
