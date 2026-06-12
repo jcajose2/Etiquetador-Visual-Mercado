@@ -2,16 +2,55 @@ function decodificarZPL(texto) {
     try {
         return decodeURIComponent(texto.replace(/_/g, '%'));
     } catch (e) {
-
         return texto.replace(/_/g, '');
     }
+}
+
+function resumirDescricaoProduto(descricao) {
+    const palavrasIgnoradas = ["DE", "DA", "DO", "DAS", "DOS", "C", "C/", "COM", "E"];
+    const palavras = descricao
+        .replace(/[^\wÀ-ÿ/-]+/g, " ")
+        .split(/\s+/)
+        .filter(Boolean)
+        .filter(palavra => !palavrasIgnoradas.includes(palavra.toUpperCase()));
+
+    let resumo = "";
+
+    for (const palavra of palavras) {
+        const proximoResumo = resumo ? `${resumo} ${palavra}` : palavra;
+        if (proximoResumo.length > 35 || proximoResumo.split(" ").length > 5) break;
+        resumo = proximoResumo;
+    }
+
+    return resumo || "PRODUTO";
+}
+
+function formatarSkuEtiqueta(textoSku) {
+    const conteudo = textoSku.replace(/^SKU:\s*/i, '').trim();
+    const partes = conteudo
+        .split(/[-\s]+/)
+        .map(parte => parte.trim().toUpperCase())
+        .filter(Boolean);
+
+    const unidadeIndex = partes.findIndex(parte => /^\d+(UN|UND|UNID|UNIDADE|UNIDADES)$/.test(parte));
+    const unidade = unidadeIndex >= 0
+        ? partes[unidadeIndex].replace(/(UND|UNID|UNIDADE|UNIDADES)$/, 'UN')
+        : "";
+    const areaCodigo = unidadeIndex >= 0 ? partes.slice(0, unidadeIndex) : partes;
+    const codigo = areaCodigo.find(parte => /^\d+$/.test(parte))
+        || areaCodigo.find(parte => /\d/.test(parte))
+        || areaCodigo[0]
+        || conteudo.toUpperCase();
+
+    if (codigo && unidade) return `SKU: ${codigo} - ${unidade}`;
+
+    return `SKU: ${partes.join(" - ") || conteudo.toUpperCase()}`;
 }
 
 function gerarEtiquetas() {
     const input = document.getElementById('zplInput').value;
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = "";
-
 
     const barcodeMatch = input.match(/\^FD([A-Z0-9]+)\^FS/);
     const barcodeValue = barcodeMatch ? barcodeMatch[1] : "ERRO";
@@ -21,44 +60,46 @@ function gerarEtiquetas() {
     let sku = "N/A";
 
     if (descMatch) {
+        const campos = descMatch
+            .map(t => decodificarZPL(t.replace(/^\^FD|\^FS$/g, '')).trim())
+            .filter(Boolean);
 
-        const achouDesc = descMatch.find(t => t.includes("Fita") || t.includes("Pasta"));
-        if (achouDesc) descricao = decodificarZPL(achouDesc.replace(/^\^FD|\^FS$/g, ''));
+        const achouDesc = campos.find(t => t !== barcodeValue && !t.toUpperCase().startsWith("SKU:"));
+        if (achouDesc) descricao = resumirDescricaoProduto(achouDesc);
 
-
-        const achouSku = descMatch.find(t => t.includes("SKU:"));
-        if (achouSku) sku = decodificarZPL(achouSku.replace(/^\^FD|\^FS$/g, ''));
+        const achouSku = campos.find(t => t.toUpperCase().startsWith("SKU:"));
+        if (achouSku) sku = formatarSkuEtiqueta(achouSku);
     }
 
     const qtdMatch = input.match(/\^PQ(\d+)/);
     const quantidade = qtdMatch ? parseInt(qtdMatch[1]) : 1;
 
-
     for (let i = 0; i < quantidade; i += 2) {
         const linha = document.createElement('div');
         linha.className = 'etiqueta-linha';
 
-
         for (let j = 0; j < 2; j++) {
             if (i + j < quantidade) {
                 const label = document.createElement('div');
-                label.className = 'etiqueta-individual';
+                label.className = 'etiqueta-individual etiqueta-mercado';
 
                 const idCanvas = `bc-${i}-${j}`;
                 label.innerHTML = `
-                    <svg id="${idCanvas}" class="barcode"></svg>
-                    <div class="txt-codigo">${barcodeValue}</div>
-                    <div class="txt-desc">${descricao}</div>
-                    <div class="txt-sku">${sku}</div>
+                    <div class="etiqueta-conteudo">
+                        <svg id="${idCanvas}" class="barcode"></svg>
+                        <div class="txt-codigo">${barcodeValue}</div>
+                        <div class="txt-desc">${descricao}</div>
+                        <div class="txt-sku">${sku}</div>
+                    </div>
                 `;
                 linha.appendChild(label);
 
-
+                // Desenho puro sem cálculos de viewBox
                 setTimeout(() => {
                     JsBarcode(`#${idCanvas}`, barcodeValue, {
                         format: "CODE128",
-                        width: 1.5,
-                        height: 40,
+                        width: 1.3,
+                        height: 35,
                         displayValue: false,
                         margin: 0
                     });
@@ -135,7 +176,6 @@ function gerarEtiquetasTextoLivre() {
                 linha.appendChild(label);
             }
         }
-
         printArea.appendChild(linha);
     }
 
