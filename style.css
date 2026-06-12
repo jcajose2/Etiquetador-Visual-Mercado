@@ -54,6 +54,11 @@ button {
 .tab-btn {
     background: #e2e8f0;
     color: #1e293b;
+    border: none;
+    padding: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 .tab-btn.active {
@@ -91,7 +96,9 @@ input[type="number"] {
     font-weight: 700;
 }
 
-
+/* =======================================================
+   REGRAS DE IMPRESSÃO
+   ======================================================= */
 @media print {
     .no-print, .guia-configuracao {
         display: none !important;
@@ -104,7 +111,7 @@ input[type="number"] {
     }
 
     @page {
-        size: 80mm 25mm; 
+        size: 80mm 25mm;
         margin: 0;
     }
 
@@ -116,15 +123,16 @@ input[type="number"] {
     }
 
     .etiqueta-linha {
-        display: flex; 
+        display: flex;
+        justify-content: space-between; /* Distribui as etiquetas com espaço no meio */
         width: 80mm;
         height: 25mm;
         page-break-after: always;
         overflow: hidden;
     }
 
-    .etiqueta-individual { 
-        width: 40mm; 
+    .etiqueta-individual {
+        width: 39mm; /* Trava em 39mm (deixa 2mm de GAP no meio do papel 80mm) */
         height: 25mm;
         box-sizing: border-box;
         padding: 1.5mm;
@@ -133,28 +141,77 @@ input[type="number"] {
         align-items: center;
         justify-content: flex-start;
         text-align: center;
+        overflow: hidden;
     }
 
-    .barcode { width: 34mm; height: 10mm; }
-    .txt-codigo { font-size: 8pt; font-weight: bold; margin: 0.5mm 0; }
-    .txt-desc { font-size: 6pt; line-height: 1.1; margin: 0; max-height: 7mm; overflow: hidden; word-wrap: break-word; }
-    .txt-sku { font-size: 7pt; font-weight: bold; margin-top: 0.5mm; }
+    /* Tela 1: Mercado Livre */
+    .etiqueta-conteudo {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+    }
 
+    .barcode {
+        display: block !important;
+        width: 33mm !important; /* Limite firme para não estourar */
+        height: 9mm !important;
+        margin: 0 auto 1mm auto !important;
+    }
+
+    .txt-codigo {
+        width: 100%;
+        font-size: 7.5pt;
+        font-weight: bold;
+        line-height: 1;
+        margin: 0;
+        text-align: center;
+    }
+
+    .txt-desc {
+        display: block !important;
+        width: 36mm; /* Limite de contenção do texto */
+        font-size: 5.5pt;
+        line-height: 1.1;
+        margin: 1mm auto;
+        max-height: 6mm;
+        overflow: hidden;
+        white-space: normal;
+        word-wrap: break-word; /* Força a quebra de linha em vez de passar pro lado */
+        text-align: center;
+    }
+
+    .txt-sku {
+        width: 100%;
+        font-size: 6.5pt;
+        font-weight: bold;
+        line-height: 1;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    /* Tela 2: Texto Livre */
     .etiqueta-texto-livre {
+        display: flex;
+        align-items: center;
         justify-content: center;
     }
 
     .txt-livre {
-        width: 100%;
-        font-size: 14pt;
+        width: 36mm;
+        font-size: 11pt;
         font-weight: 800;
-        line-height: 1.15;
+        line-height: 1.2;
         white-space: pre-wrap;
-        word-break: break-word;
+        word-wrap: break-word;
+        text-align: center;
     }
 }
 
-
+/* Painel de Configuração e Rodapé */
 .guia-configuracao {
     margin-top: 40px;
     padding: 20px;
@@ -178,7 +235,7 @@ input[type="number"] {
 }
 
 .img-manual {
-    max-width: 620px; 
+    max-width: 320px; 
     border: 1px solid #ddd;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -194,7 +251,6 @@ input[type="number"] {
     margin-bottom: 8px;
     font-size: 0.85rem;
 }
-
 
 .equipamentos {
     background: #f8fafc;
