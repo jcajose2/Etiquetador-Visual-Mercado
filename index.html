@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Etiquetador Impressora Knup - 2 Colunas</title>
+    <title>Etiquetador Visual</title>
     <link rel="icon" type="image/png" href="imagens/logo.png">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
@@ -11,19 +11,30 @@
 
 <body>
     <div class="container no-print">
-        <header>
-            <img src="imagens/logo.png" alt="Logo" style="width: 50px; vertical-align: middle;">
-            <h1 style="display: inline-block; margin-left: 10px;">Etiquetador Visual Mercado Full</h1>
-            <p>Ajustado para 80x25mm (2 colunas). Tamanho 4x2.5 cm</p>
+        <header class="app-header">
+            <img src="imagens/logo.png" alt="Logo" class="brand-logo">
+            <h1>Etiquetador Visual</h1>
+            <p>Etiquetas 80x25mm em 2 colunas, texto livre e visualizacao ZPL.</p>
         </header>
 
         <div class="menu-telas" role="tablist" aria-label="Tipo de etiqueta">
-            <button id="tab-zpl" class="tab-btn active" type="button" onclick="mostrarTela('zpl')">ZPL Mercado</button>
-            <button id="tab-texto" class="tab-btn" type="button" onclick="mostrarTela('texto')">Texto livre</button>
+            <button id="tab-zpl" class="tab-btn active" type="button" onclick="mostrarTela('zpl')">
+                <span>Etiqueta SKU</span>
+                <small>ZPL de produto</small>
+            </button>
+            <button id="tab-texto" class="tab-btn" type="button" onclick="mostrarTela('texto')">
+                <span>Texto livre</span>
+                <small>Informacao manual</small>
+            </button>
+            <button id="tab-labelary" class="tab-btn" type="button" onclick="mostrarTela('labelary')">
+                <span>Visualizar ZPL</span>
+                <small>Preview e impressao</small>
+            </button>
         </div>
 
         <section id="tela-zpl" class="tela active">
-            <textarea id="zplInput" placeholder="Cole o código ZPL aqui..."></textarea>
+            <label for="zplInput">ZPL da etiqueta</label>
+            <textarea id="zplInput" placeholder="Cole o codigo ZPL aqui..."></textarea>
 
             <div class="actions">
                 <button onclick="gerarEtiquetas()">Gerar e Imprimir</button>
@@ -41,6 +52,46 @@
             <div class="actions">
                 <button onclick="gerarEtiquetasTextoLivre()">Gerar e Imprimir</button>
                 <button class="btn-secondary" onclick="limparTextoLivre()">Limpar</button>
+            </div>
+        </section>
+
+        <section id="tela-labelary" class="tela">
+            <label for="labelaryInput">ZPL ou link de visualizacao</label>
+            <textarea id="labelaryInput" placeholder="Cole aqui o ZPL ou uma URL com ZPL"></textarea>
+
+            <div class="labelary-grid">
+                <div>
+                    <label for="labelaryDensity">Densidade</label>
+                    <select id="labelaryDensity">
+                        <option value="6">6 dpmm</option>
+                        <option value="8" selected>8 dpmm</option>
+                        <option value="12">12 dpmm</option>
+                        <option value="24">24 dpmm</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="labelaryWidth">Largura</label>
+                    <input id="labelaryWidth" type="number" min="0.1" step="0.01" value="4">
+                </div>
+                <div>
+                    <label for="labelaryHeight">Altura</label>
+                    <input id="labelaryHeight" type="number" min="0.1" step="0.01" value="6">
+                </div>
+                <div>
+                    <label for="labelaryIndex">Pagina</label>
+                    <input id="labelaryIndex" type="number" min="1" step="1" value="1">
+                </div>
+            </div>
+
+            <div class="actions">
+                <button onclick="gerarPreviaLabelary()">Gerar preview</button>
+                <button onclick="imprimirZplPreview()">Imprimir ZPL</button>
+                <button class="btn-secondary" onclick="limparLabelary()">Limpar</button>
+            </div>
+
+            <div class="labelary-preview">
+                <img id="labelaryPreview" alt="Preview ZPL" hidden>
+                <span id="labelaryPreviewInfo" class="preview-info"></span>
             </div>
         </section>
 
@@ -62,9 +113,8 @@
                     </ul>
 
                     <div class="equipamentos">
-                        <h4>🛒 Equipamentos Recomendados:</h4>
-                        <a href="https://meli.la/2FEWQjZ" target="_blank" class="btn-link">Impressora Knup IM600</a>
-                        <a href="https://meli.la/1yhVFaF" target="_blank" class="btn-link">Etiqueta Térmica 40x25mm</a>
+                        <h4>Equipamentos Recomendados:</h4>
+                        <p>Impressora Knup IM600 com etiqueta termica 40x25mm.</p>
                     </div>
                 </div>
             </div>
