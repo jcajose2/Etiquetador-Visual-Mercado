@@ -51,6 +51,8 @@ function gerarEtiquetas() {
     const input = document.getElementById('zplInput').value;
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = "";
+    printArea.className = "";
+    limparEstiloImpressaoZpl();
 
     const barcodeMatch = input.match(/\^FD([A-Z0-9]+)\^FS/);
     const barcodeValue = barcodeMatch ? barcodeMatch[1] : "ERRO";
@@ -81,7 +83,7 @@ function gerarEtiquetas() {
         for (let j = 0; j < 2; j++) {
             if (i + j < quantidade) {
                 const label = document.createElement('div');
-                label.className = 'etiqueta-individual etiqueta-mercado';
+                label.className = 'etiqueta-individual etiqueta-produto';
 
                 const idCanvas = `bc-${i}-${j}`;
                 label.innerHTML = `
@@ -113,18 +115,17 @@ function gerarEtiquetas() {
 }
 
 function mostrarTela(tipo) {
-    const telaZpl = document.getElementById('tela-zpl');
-    const telaTexto = document.getElementById('tela-texto');
-    const tabZpl = document.getElementById('tab-zpl');
-    const tabTexto = document.getElementById('tab-texto');
+    const tipos = ['zpl', 'texto', 'labelary'];
 
-    const telaTextoAtiva = tipo === 'texto';
+    tipos.forEach(nome => {
+        const tela = document.getElementById(`tela-${nome}`);
+        const tab = document.getElementById(`tab-${nome}`);
 
-    telaZpl.classList.toggle('active', !telaTextoAtiva);
-    telaTexto.classList.toggle('active', telaTextoAtiva);
-    tabZpl.classList.toggle('active', !telaTextoAtiva);
-    tabTexto.classList.toggle('active', telaTextoAtiva);
+        if (tela) tela.classList.toggle('active', tipo === nome);
+        if (tab) tab.classList.toggle('active', tipo === nome);
+    });
 
+    document.body.classList.toggle('modo-preview-zpl', tipo === 'labelary');
     limparStatus();
 }
 
@@ -150,6 +151,8 @@ function gerarEtiquetasTextoLivre() {
     const quantidadeCampo = document.getElementById('quantidadeTexto');
     const quantidade = Math.min(500, Math.max(1, parseInt(quantidadeCampo.value, 10) || 1));
     const printArea = document.getElementById('print-area');
+    printArea.className = "";
+    limparEstiloImpressaoZpl();
 
     if (!texto) {
         exibirStatus("Digite a informacao que deseja imprimir.");
@@ -181,4 +184,273 @@ function gerarEtiquetasTextoLivre() {
 
     limparStatus();
     setTimeout(() => { window.print(); }, 300);
+}
+
+let labelaryPreviewUrl = "";
+let labelaryPrintUrls = [];
+
+function extrairZplLabelary(entrada) {
+    const texto = entrada.trim();
+
+    if (!texto) return "";
+
+    if (/^https?:\/\//i.test(texto)) {
+        try {
+            const url = new URL(texto);
+            const zpl = url.searchParams.get('zpl');
+            const density = url.searchParams.get('density');
+            const width = url.searchParams.get('width');
+            const height = url.searchParams.get('height');
+            const index = url.searchParams.get('index');
+
+            if (density) document.getElementById('labelaryDensity').value = density;
+            if (width) document.getElementById('labelaryWidth').value = width;
+            if (height) document.getElementById('labelaryHeight').value = height;
+            if (index) document.getElementById('labelaryIndex').value = Math.max(1, parseInt(index, 10) || 1);
+
+            return zpl || texto;
+        } catch (e) {
+            return texto;
+        }
+    }
+
+    return texto;
+}
+
+function obterConfigLabelary() {
+    const density = document.getElementById('labelaryDensity').value || "8";
+    const width = Math.max(0.1, parseFloat(document.getElementById('labelaryWidth').value) || 4);
+    const height = Math.max(0.1, parseFloat(document.getElementById('labelaryHeight').value) || 6);
+    const page = Math.max(1, parseInt(document.getElementById('labelaryIndex').value, 10) || 1);
+
+    document.getElementById('labelaryWidth').value = width;
+    document.getElementById('labelaryHeight').value = height;
+    document.getElementById('labelaryIndex').value = page;
+
+    return {
+        density,
+        width,
+        height,
+        page,
+        apiIndex: page - 1
+    };
+}
+
+async function gerarPreviaLabelary() {
+    const entrada = document.getElementById('labelaryInput').value;
+    const zpl = extrairZplLabelary(entrada);
+    const preview = document.getElementById('labelaryPreview');
+    const info = document.getElementById('labelaryPreviewInfo');
+
+    if (!zpl) {
+        exibirStatus("Cole um ZPL ou link de visualizacao.");
+        return;
+    }
+
+    if (!zpl.includes('^XA') || !zpl.includes('^XZ')) {
+        exibirStatus("O conteudo precisa ter um ZPL valido com ^XA e ^XZ.");
+        return;
+    }
+
+    const config = obterConfigLabelary();
+
+    exibirStatus("Gerando preview...");
+    preview.hidden = true;
+    info.textContent = "";
+
+    try {
+        const resultado = await renderizarImagemZpl(zpl, config, config.apiIndex);
+
+        if (labelaryPreviewUrl) URL.revokeObjectURL(labelaryPreviewUrl);
+        labelaryPreviewUrl = resultado.url;
+
+        preview.src = labelaryPreviewUrl;
+        preview.hidden = false;
+        info.textContent = resultado.total > 1 ? `Pagina ${config.page} de ${resultado.total}` : "";
+        limparStatus();
+    } catch (e) {
+        const mensagem = e.name === "AbortError" ? "tempo limite excedido" : e.message;
+        exibirStatus(`Nao foi possivel gerar o preview: ${mensagem}`);
+    }
+}
+
+async function renderizarImagemZpl(zpl, config, apiIndex) {
+    const url = `https://api.labelary.com/v1/printers/${config.density}dpmm/labels/${config.width}x${config.height}/${apiIndex}/`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+
+    try {
+        const resposta = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Accept": "image/png",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: zpl,
+            signal: controller.signal
+        });
+
+        if (!resposta.ok) {
+            const erro = await resposta.text();
+            throw new Error(erro || `Erro ${resposta.status}`);
+        }
+
+        const imagem = await resposta.blob();
+        const total = Math.max(1, parseInt(resposta.headers.get("X-Total-Count"), 10) || 1);
+
+        return {
+            url: URL.createObjectURL(imagem),
+            total
+        };
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
+function atualizarEstiloImpressaoZpl(config) {
+    let estilo = document.getElementById('zpl-print-style');
+
+    if (!estilo) {
+        estilo = document.createElement('style');
+        estilo.id = 'zpl-print-style';
+        document.head.appendChild(estilo);
+    }
+
+    estilo.textContent = `
+        @media print {
+            @page {
+                size: ${config.width}in ${config.height}in;
+                margin: 0;
+            }
+
+            #print-area.zpl-print-area {
+                display: block !important;
+                width: ${config.width}in !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .zpl-print-page {
+                width: ${config.width}in !important;
+                height: ${config.height}in !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .zpl-print-page:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+
+            .zpl-print-page img {
+                display: block !important;
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: contain !important;
+            }
+        }
+    `;
+}
+
+function limparEstiloImpressaoZpl() {
+    const estilo = document.getElementById('zpl-print-style');
+    if (estilo) estilo.remove();
+}
+
+function limparUrlsImpressaoZpl() {
+    labelaryPrintUrls.forEach(url => URL.revokeObjectURL(url));
+    labelaryPrintUrls = [];
+}
+
+function aguardarImagemCarregar(img) {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("imagem de impressao nao carregou"));
+    });
+}
+
+async function imprimirZplPreview() {
+    const entrada = document.getElementById('labelaryInput').value;
+    const zpl = extrairZplLabelary(entrada);
+
+    if (!zpl) {
+        exibirStatus("Cole um ZPL ou link de visualizacao.");
+        return;
+    }
+
+    const config = obterConfigLabelary();
+    const printArea = document.getElementById('print-area');
+
+    if (!zpl.includes('^XA') || !zpl.includes('^XZ')) {
+        exibirStatus("O conteudo precisa ter um ZPL valido com ^XA e ^XZ.");
+        return;
+    }
+
+    try {
+        exibirStatus("Preparando impressao...");
+        limparUrlsImpressaoZpl();
+        printArea.innerHTML = "";
+        printArea.className = "zpl-print-area";
+        atualizarEstiloImpressaoZpl(config);
+
+        const primeiraPagina = await renderizarImagemZpl(zpl, config, 0);
+        labelaryPrintUrls.push(primeiraPagina.url);
+        const total = primeiraPagina.total;
+        const paginas = [primeiraPagina];
+
+        for (let i = 1; i < total; i++) {
+            exibirStatus(`Preparando impressao ${i + 1} de ${total}...`);
+            const pagina = await renderizarImagemZpl(zpl, config, i);
+            labelaryPrintUrls.push(pagina.url);
+            paginas.push(pagina);
+        }
+
+        const carregamentos = paginas.map(pagina => {
+            const page = document.createElement('div');
+            const img = document.createElement('img');
+
+            page.className = "zpl-print-page";
+            img.src = pagina.url;
+            img.alt = "Etiqueta ZPL";
+            page.appendChild(img);
+            printArea.appendChild(page);
+
+            return aguardarImagemCarregar(img);
+        });
+
+        await Promise.all(carregamentos);
+        limparStatus();
+        setTimeout(() => { window.print(); }, 200);
+    } catch (e) {
+        const mensagem = e.name === "AbortError" ? "tempo limite excedido" : e.message;
+        exibirStatus(`Nao foi possivel imprimir: ${mensagem}`);
+    }
+}
+
+function limparLabelary() {
+    document.getElementById('labelaryInput').value = "";
+    document.getElementById('labelaryDensity').value = "8";
+    document.getElementById('labelaryWidth').value = "4";
+    document.getElementById('labelaryHeight').value = "6";
+    document.getElementById('labelaryIndex').value = "1";
+
+    const preview = document.getElementById('labelaryPreview');
+    const info = document.getElementById('labelaryPreviewInfo');
+    preview.removeAttribute('src');
+    preview.hidden = true;
+    info.textContent = "";
+
+    if (labelaryPreviewUrl) URL.revokeObjectURL(labelaryPreviewUrl);
+    labelaryPreviewUrl = "";
+    limparUrlsImpressaoZpl();
+    limparEstiloImpressaoZpl();
+    document.getElementById('print-area').innerHTML = "";
+    document.getElementById('print-area').className = "";
+
+    limparStatus();
 }
