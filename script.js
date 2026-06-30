@@ -47,13 +47,7 @@ function formatarSkuEtiqueta(textoSku) {
     return `SKU: ${partes.join(" - ") || conteudo.toUpperCase()}`;
 }
 
-function gerarEtiquetas() {
-    const input = document.getElementById('zplInput').value;
-    const printArea = document.getElementById('print-area');
-    printArea.innerHTML = "";
-    printArea.className = "";
-    limparEstiloImpressaoZpl();
-
+function extrairDadosProduto(input) {
     const barcodeMatch = input.match(/\^FD([A-Z0-9]+)\^FS/);
     const barcodeValue = barcodeMatch ? barcodeMatch[1] : "ERRO";
 
@@ -75,6 +69,121 @@ function gerarEtiquetas() {
 
     const qtdMatch = input.match(/\^PQ(\d+)/);
     const quantidade = qtdMatch ? parseInt(qtdMatch[1]) : 1;
+
+    return { barcodeValue, descricao, sku, quantidade };
+}
+
+function atualizarIcones() {
+    if (window.lucide) window.lucide.createIcons();
+}
+
+function criarFolhaPreviewVazia(container) {
+    container.innerHTML = `
+        <div class="preview-sheet" aria-hidden="true">
+            <div class="visual-label empty-label"><i data-lucide="tag"></i></div>
+            <div class="visual-label empty-label"><i data-lucide="tag"></i></div>
+        </div>
+    `;
+    atualizarIcones();
+}
+
+function criarFolhaPreviewProduto(container, dados) {
+    const folha = document.createElement('div');
+    const codigos = [];
+
+    folha.className = 'preview-sheet';
+
+    for (let i = 0; i < 2; i++) {
+        const etiqueta = document.createElement('div');
+        const codigoBarras = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const codigo = document.createElement('div');
+        const descricao = document.createElement('div');
+        const sku = document.createElement('div');
+
+        etiqueta.className = 'visual-label visual-product';
+        codigoBarras.classList.add('visual-barcode');
+        codigo.className = 'visual-code';
+        descricao.className = 'visual-description';
+        sku.className = 'visual-sku';
+
+        codigo.textContent = dados.barcodeValue;
+        descricao.textContent = dados.descricao;
+        sku.textContent = dados.sku;
+
+        etiqueta.appendChild(codigoBarras);
+        etiqueta.appendChild(codigo);
+        etiqueta.appendChild(descricao);
+        etiqueta.appendChild(sku);
+        folha.appendChild(etiqueta);
+        codigos.push(codigoBarras);
+    }
+
+    container.replaceChildren(folha);
+
+    codigos.forEach(svg => {
+        try {
+            JsBarcode(svg, dados.barcodeValue, {
+                format: "CODE128",
+                width: 1.3,
+                height: 35,
+                displayValue: false,
+                margin: 0
+            });
+        } catch (e) {
+            svg.remove();
+        }
+    });
+}
+
+function atualizarPreviaProduto() {
+    const input = document.getElementById('zplInput').value.trim();
+    const container = document.getElementById('produtoPreview');
+    const info = document.getElementById('produtoPreviewInfo');
+
+    if (!input) {
+        criarFolhaPreviewVazia(container);
+        info.textContent = "Sem conteúdo";
+        return false;
+    }
+
+    const dados = extrairDadosProduto(input);
+    criarFolhaPreviewProduto(container, dados);
+    info.textContent = `${dados.quantidade} ${dados.quantidade === 1 ? "etiqueta" : "etiquetas"}`;
+    return true;
+}
+
+function gerarPreviaProduto() {
+    if (!atualizarPreviaProduto()) {
+        exibirStatus("Cole o código ZPL que deseja visualizar.");
+        return;
+    }
+
+    exibirStatus("Prévia atualizada.", "success");
+}
+
+function limparProduto() {
+    document.getElementById('zplInput').value = "";
+    document.getElementById('print-area').innerHTML = "";
+    document.getElementById('print-area').className = "";
+    limparEstiloImpressaoZpl();
+    atualizarPreviaProduto();
+    limparStatus();
+}
+
+function gerarEtiquetas() {
+    const input = document.getElementById('zplInput').value;
+    const printArea = document.getElementById('print-area');
+
+    if (!input.trim()) {
+        exibirStatus("Cole o código ZPL que deseja imprimir.");
+        return;
+    }
+
+    printArea.innerHTML = "";
+    printArea.className = "";
+    limparEstiloImpressaoZpl();
+
+    const { barcodeValue, descricao, sku, quantidade } = extrairDadosProduto(input);
 
     for (let i = 0; i < quantidade; i += 2) {
         const linha = document.createElement('div');
@@ -111,6 +220,7 @@ function gerarEtiquetas() {
         printArea.appendChild(linha);
     }
 
+    limparStatus();
     setTimeout(() => { window.print(); }, 500);
 }
 
@@ -120,36 +230,109 @@ function mostrarTela(tipo) {
     tipos.forEach(nome => {
         const tela = document.getElementById(`tela-${nome}`);
         const tab = document.getElementById(`tab-${nome}`);
+        const ativa = tipo === nome;
 
-        if (tela) tela.classList.toggle('active', tipo === nome);
-        if (tab) tab.classList.toggle('active', tipo === nome);
+        if (tela) {
+            tela.classList.toggle('active', ativa);
+            tela.hidden = !ativa;
+        }
+
+        if (tab) {
+            tab.classList.toggle('active', ativa);
+            tab.setAttribute('aria-selected', ativa ? 'true' : 'false');
+            tab.tabIndex = ativa ? 0 : -1;
+        }
     });
 
     document.body.classList.toggle('modo-preview-zpl', tipo === 'labelary');
     limparStatus();
+
+    if (tipo === 'zpl') atualizarPreviaProduto();
+    if (tipo === 'texto') atualizarPreviaTextoLivre();
 }
 
 function limparTextoLivre() {
     document.getElementById('textoLivre').value = "";
     document.getElementById('quantidadeTexto').value = 1;
     document.getElementById('print-area').innerHTML = "";
+    document.getElementById('print-area').className = "";
+    atualizarPreviaTextoLivre();
     limparStatus();
 }
 
 function limparStatus() {
     const status = document.getElementById('status');
-    if (status) status.textContent = "";
+    if (status) {
+        status.textContent = "";
+        status.hidden = true;
+        status.removeAttribute('data-type');
+    }
 }
 
-function exibirStatus(mensagem) {
+function exibirStatus(mensagem, tipo = "error") {
     const status = document.getElementById('status');
-    if (status) status.textContent = mensagem;
+    if (status) {
+        status.textContent = mensagem;
+        status.dataset.type = tipo;
+        status.hidden = false;
+    }
+}
+
+function quantidadeTextoAtual() {
+    const campo = document.getElementById('quantidadeTexto');
+    return Math.min(500, Math.max(1, parseInt(campo.value, 10) || 1));
+}
+
+function alterarQuantidadeTexto(valor) {
+    const campo = document.getElementById('quantidadeTexto');
+    campo.value = Math.min(500, Math.max(1, quantidadeTextoAtual() + valor));
+    atualizarPreviaTextoLivre();
+}
+
+function atualizarPreviaTextoLivre() {
+    const texto = document.getElementById('textoLivre').value.trim();
+    const quantidade = quantidadeTextoAtual();
+    const container = document.getElementById('textoPreview');
+    const info = document.getElementById('textoPreviewInfo');
+
+    info.textContent = `${quantidade} ${quantidade === 1 ? "etiqueta" : "etiquetas"}`;
+
+    if (!texto) {
+        criarFolhaPreviewVazia(container);
+        return false;
+    }
+
+    const folha = document.createElement('div');
+    folha.className = 'preview-sheet';
+
+    for (let i = 0; i < 2; i++) {
+        const etiqueta = document.createElement('div');
+        const conteudo = document.createElement('div');
+
+        etiqueta.className = 'visual-label';
+        conteudo.className = 'visual-free-text';
+        conteudo.textContent = texto;
+        etiqueta.appendChild(conteudo);
+        folha.appendChild(etiqueta);
+    }
+
+    container.replaceChildren(folha);
+    return true;
+}
+
+function gerarPreviaTextoLivre() {
+    if (!atualizarPreviaTextoLivre()) {
+        exibirStatus("Digite a informação que deseja visualizar.");
+        return;
+    }
+
+    exibirStatus("Prévia atualizada.", "success");
 }
 
 function gerarEtiquetasTextoLivre() {
     const texto = document.getElementById('textoLivre').value.trim();
     const quantidadeCampo = document.getElementById('quantidadeTexto');
-    const quantidade = Math.min(500, Math.max(1, parseInt(quantidadeCampo.value, 10) || 1));
+    const quantidade = quantidadeTextoAtual();
     const printArea = document.getElementById('print-area');
     printArea.className = "";
     limparEstiloImpressaoZpl();
@@ -241,21 +424,23 @@ async function gerarPreviaLabelary() {
     const zpl = extrairZplLabelary(entrada);
     const preview = document.getElementById('labelaryPreview');
     const info = document.getElementById('labelaryPreviewInfo');
+    const empty = document.getElementById('labelaryEmpty');
 
     if (!zpl) {
-        exibirStatus("Cole um ZPL ou link de visualizacao.");
+        exibirStatus("Cole um ZPL ou link de visualização.");
         return;
     }
 
     if (!zpl.includes('^XA') || !zpl.includes('^XZ')) {
-        exibirStatus("O conteudo precisa ter um ZPL valido com ^XA e ^XZ.");
+        exibirStatus("O conteúdo precisa ter um ZPL válido com ^XA e ^XZ.");
         return;
     }
 
     const config = obterConfigLabelary();
 
-    exibirStatus("Gerando preview...");
+    exibirStatus("Gerando prévia...", "loading");
     preview.hidden = true;
+    empty.hidden = true;
     info.textContent = "";
 
     try {
@@ -266,11 +451,14 @@ async function gerarPreviaLabelary() {
 
         preview.src = labelaryPreviewUrl;
         preview.hidden = false;
-        info.textContent = resultado.total > 1 ? `Pagina ${config.page} de ${resultado.total}` : "";
+        empty.hidden = true;
+        info.textContent = resultado.total > 1 ? `Página ${config.page} de ${resultado.total}` : "1 página";
         limparStatus();
     } catch (e) {
         const mensagem = e.name === "AbortError" ? "tempo limite excedido" : e.message;
-        exibirStatus(`Nao foi possivel gerar o preview: ${mensagem}`);
+        empty.hidden = false;
+        info.textContent = "Sem conteúdo";
+        exibirStatus(`Não foi possível gerar a prévia: ${mensagem}`);
     }
 }
 
@@ -379,7 +567,7 @@ async function imprimirZplPreview() {
     const zpl = extrairZplLabelary(entrada);
 
     if (!zpl) {
-        exibirStatus("Cole um ZPL ou link de visualizacao.");
+        exibirStatus("Cole um ZPL ou link de visualização.");
         return;
     }
 
@@ -387,12 +575,12 @@ async function imprimirZplPreview() {
     const printArea = document.getElementById('print-area');
 
     if (!zpl.includes('^XA') || !zpl.includes('^XZ')) {
-        exibirStatus("O conteudo precisa ter um ZPL valido com ^XA e ^XZ.");
+        exibirStatus("O conteúdo precisa ter um ZPL válido com ^XA e ^XZ.");
         return;
     }
 
     try {
-        exibirStatus("Preparando impressao...");
+        exibirStatus("Preparando impressão...", "loading");
         limparUrlsImpressaoZpl();
         printArea.innerHTML = "";
         printArea.className = "zpl-print-area";
@@ -404,7 +592,7 @@ async function imprimirZplPreview() {
         const paginas = [primeiraPagina];
 
         for (let i = 1; i < total; i++) {
-            exibirStatus(`Preparando impressao ${i + 1} de ${total}...`);
+            exibirStatus(`Preparando impressão ${i + 1} de ${total}...`, "loading");
             const pagina = await renderizarImagemZpl(zpl, config, i);
             labelaryPrintUrls.push(pagina.url);
             paginas.push(pagina);
@@ -428,7 +616,7 @@ async function imprimirZplPreview() {
         setTimeout(() => { window.print(); }, 200);
     } catch (e) {
         const mensagem = e.name === "AbortError" ? "tempo limite excedido" : e.message;
-        exibirStatus(`Nao foi possivel imprimir: ${mensagem}`);
+        exibirStatus(`Não foi possível imprimir: ${mensagem}`);
     }
 }
 
@@ -441,9 +629,11 @@ function limparLabelary() {
 
     const preview = document.getElementById('labelaryPreview');
     const info = document.getElementById('labelaryPreviewInfo');
+    const empty = document.getElementById('labelaryEmpty');
     preview.removeAttribute('src');
     preview.hidden = true;
-    info.textContent = "";
+    empty.hidden = false;
+    info.textContent = "Sem conteúdo";
 
     if (labelaryPreviewUrl) URL.revokeObjectURL(labelaryPreviewUrl);
     labelaryPreviewUrl = "";
@@ -454,3 +644,9 @@ function limparLabelary() {
 
     limparStatus();
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    atualizarIcones();
+    atualizarPreviaProduto();
+    atualizarPreviaTextoLivre();
+});

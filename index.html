@@ -1,130 +1,271 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#17212b">
     <title>Etiquetador Visual</title>
-    <link rel="icon" type="image/png" href="imagens/logo.png">
-    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="imagens/logo-ev.svg">
+    <link rel="stylesheet" href="style.css?v=20260630">
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="vendor/lucide.min.js?v=0.468.0"></script>
 </head>
 
 <body>
-    <div class="container no-print">
+    <div class="app-shell no-print">
         <header class="app-header">
-            <img src="imagens/logo.png" alt="Logo" class="brand-logo">
-            <h1>Etiquetador Visual</h1>
-            <p>Etiquetas 80x25mm em 2 colunas, texto livre e visualizacao ZPL.</p>
+            <div class="brand">
+                <img src="imagens/logo-ev.svg" alt="" class="brand-logo">
+                <div>
+                    <h1>Etiquetador Visual</h1>
+                    <p>Central de criação e impressão</p>
+                </div>
+            </div>
+
+            <div class="format-badge" aria-label="Formato padrão: 40 por 25 milímetros, duas colunas">
+                <i data-lucide="ruler"></i>
+                <span>40 x 25 mm</span>
+                <small>2 colunas</small>
+            </div>
         </header>
 
-        <div class="menu-telas" role="tablist" aria-label="Tipo de etiqueta">
-            <button id="tab-zpl" class="tab-btn active" type="button" onclick="mostrarTela('zpl')">
-                <span>Etiqueta SKU</span>
-                <small>ZPL de produto</small>
+        <nav class="menu-telas" role="tablist" aria-label="Tipo de etiqueta">
+            <button id="tab-zpl" class="tab-btn active" type="button" role="tab" aria-selected="true"
+                aria-controls="tela-zpl" onclick="mostrarTela('zpl')">
+                <span class="tab-icon"><i data-lucide="barcode"></i></span>
+                <span class="tab-copy">
+                    <strong>Etiqueta SKU</strong>
+                    <small>ZPL de produto</small>
+                </span>
             </button>
-            <button id="tab-texto" class="tab-btn" type="button" onclick="mostrarTela('texto')">
-                <span>Texto livre</span>
-                <small>Informacao manual</small>
+            <button id="tab-texto" class="tab-btn" type="button" role="tab" aria-selected="false"
+                aria-controls="tela-texto" onclick="mostrarTela('texto')">
+                <span class="tab-icon"><i data-lucide="type"></i></span>
+                <span class="tab-copy">
+                    <strong>Texto livre</strong>
+                    <small>Informação manual</small>
+                </span>
             </button>
-            <button id="tab-labelary" class="tab-btn" type="button" onclick="mostrarTela('labelary')">
-                <span>Visualizar ZPL</span>
-                <small>Preview e impressao</small>
+            <button id="tab-labelary" class="tab-btn" type="button" role="tab" aria-selected="false"
+                aria-controls="tela-labelary" onclick="mostrarTela('labelary')">
+                <span class="tab-icon"><i data-lucide="scan-line"></i></span>
+                <span class="tab-copy">
+                    <strong>Visualizar ZPL</strong>
+                    <small>Prévia e impressão</small>
+                </span>
             </button>
-        </div>
+        </nav>
 
-        <section id="tela-zpl" class="tela active">
-            <label for="zplInput">ZPL da etiqueta</label>
-            <textarea id="zplInput" placeholder="Cole o codigo ZPL aqui..."></textarea>
+        <main>
+            <section id="tela-zpl" class="tela active" role="tabpanel" aria-labelledby="tab-zpl">
+                <div class="editor-panel">
+                    <header class="section-header">
+                        <span class="section-kicker">Etiqueta SKU</span>
+                        <h2>Produto por código ZPL</h2>
+                    </header>
 
-            <div class="actions">
-                <button onclick="gerarEtiquetas()">Gerar e Imprimir</button>
-                <button class="btn-secondary" onclick="window.location.reload()">Limpar</button>
-            </div>
-        </section>
+                    <div class="form-field">
+                        <label for="zplInput">Código ZPL</label>
+                        <textarea id="zplInput" class="code-input" placeholder="Cole o código ZPL aqui..."
+                            oninput="atualizarPreviaProduto()"></textarea>
+                    </div>
 
-        <section id="tela-texto" class="tela">
-            <label for="textoLivre">Informação para imprimir</label>
-            <textarea id="textoLivre" placeholder="Ex: Nota fiscal 1511"></textarea>
-
-            <label for="quantidadeTexto">Quantidade de etiquetas</label>
-            <input id="quantidadeTexto" type="number" min="1" max="500" value="1">
-
-            <div class="actions">
-                <button onclick="gerarEtiquetasTextoLivre()">Gerar e Imprimir</button>
-                <button class="btn-secondary" onclick="limparTextoLivre()">Limpar</button>
-            </div>
-        </section>
-
-        <section id="tela-labelary" class="tela">
-            <label for="labelaryInput">ZPL ou link de visualizacao</label>
-            <textarea id="labelaryInput" placeholder="Cole aqui o ZPL ou uma URL com ZPL"></textarea>
-
-            <div class="labelary-grid">
-                <div>
-                    <label for="labelaryDensity">Densidade</label>
-                    <select id="labelaryDensity">
-                        <option value="6">6 dpmm</option>
-                        <option value="8" selected>8 dpmm</option>
-                        <option value="12">12 dpmm</option>
-                        <option value="24">24 dpmm</option>
-                    </select>
+                    <div class="actions">
+                        <button class="btn-secondary" type="button" onclick="gerarPreviaProduto()">
+                            <i data-lucide="eye"></i>
+                            <span>Visualizar</span>
+                        </button>
+                        <button class="btn-primary" type="button" onclick="gerarEtiquetas()">
+                            <i data-lucide="printer"></i>
+                            <span>Imprimir</span>
+                        </button>
+                        <button class="btn-ghost" type="button" onclick="limparProduto()">
+                            <i data-lucide="trash-2"></i>
+                            <span>Limpar</span>
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <label for="labelaryWidth">Largura</label>
-                    <input id="labelaryWidth" type="number" min="0.1" step="0.01" value="4">
+
+                <aside class="preview-panel" aria-labelledby="preview-produto-title">
+                    <header class="preview-header">
+                        <div>
+                            <span class="preview-kicker">Resultado</span>
+                            <h3 id="preview-produto-title">Prévia da etiqueta</h3>
+                        </div>
+                        <span id="produtoPreviewInfo" class="preview-meta">Sem conteúdo</span>
+                    </header>
+                    <div id="produtoPreview" class="preview-stage"></div>
+                </aside>
+            </section>
+
+            <section id="tela-texto" class="tela" role="tabpanel" aria-labelledby="tab-texto" hidden>
+                <div class="editor-panel">
+                    <header class="section-header">
+                        <span class="section-kicker">Texto livre</span>
+                        <h2>Informação para impressão</h2>
+                    </header>
+
+                    <div class="form-field">
+                        <label for="textoLivre">Conteúdo da etiqueta</label>
+                        <textarea id="textoLivre" placeholder="Ex.: Nota fiscal 1511"
+                            oninput="atualizarPreviaTextoLivre()"></textarea>
+                    </div>
+
+                    <div class="form-field quantity-field">
+                        <label for="quantidadeTexto">Quantidade de etiquetas</label>
+                        <div class="quantity-control">
+                            <button type="button" aria-label="Diminuir quantidade" title="Diminuir"
+                                onclick="alterarQuantidadeTexto(-1)">
+                                <i data-lucide="minus"></i>
+                            </button>
+                            <input id="quantidadeTexto" type="number" min="1" max="500" value="1"
+                                oninput="atualizarPreviaTextoLivre()">
+                            <button type="button" aria-label="Aumentar quantidade" title="Aumentar"
+                                onclick="alterarQuantidadeTexto(1)">
+                                <i data-lucide="plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn-secondary" type="button" onclick="gerarPreviaTextoLivre()">
+                            <i data-lucide="eye"></i>
+                            <span>Visualizar</span>
+                        </button>
+                        <button class="btn-primary" type="button" onclick="gerarEtiquetasTextoLivre()">
+                            <i data-lucide="printer"></i>
+                            <span>Imprimir</span>
+                        </button>
+                        <button class="btn-ghost" type="button" onclick="limparTextoLivre()">
+                            <i data-lucide="trash-2"></i>
+                            <span>Limpar</span>
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <label for="labelaryHeight">Altura</label>
-                    <input id="labelaryHeight" type="number" min="0.1" step="0.01" value="6">
+
+                <aside class="preview-panel" aria-labelledby="preview-texto-title">
+                    <header class="preview-header">
+                        <div>
+                            <span class="preview-kicker">Resultado</span>
+                            <h3 id="preview-texto-title">Prévia da etiqueta</h3>
+                        </div>
+                        <span id="textoPreviewInfo" class="preview-meta">1 etiqueta</span>
+                    </header>
+                    <div id="textoPreview" class="preview-stage"></div>
+                </aside>
+            </section>
+
+            <section id="tela-labelary" class="tela" role="tabpanel" aria-labelledby="tab-labelary" hidden>
+                <div class="editor-panel">
+                    <header class="section-header">
+                        <span class="section-kicker">Visualizador</span>
+                        <h2>Prévia completa do ZPL</h2>
+                    </header>
+
+                    <div class="form-field">
+                        <label for="labelaryInput">ZPL ou link de visualização</label>
+                        <textarea id="labelaryInput" class="code-input"
+                            placeholder="Cole aqui o ZPL ou uma URL com ZPL"></textarea>
+                    </div>
+
+                    <div class="labelary-grid">
+                        <div class="form-field">
+                            <label for="labelaryDensity">Densidade</label>
+                            <select id="labelaryDensity">
+                                <option value="6">6 dpmm</option>
+                                <option value="8" selected>8 dpmm</option>
+                                <option value="12">12 dpmm</option>
+                                <option value="24">24 dpmm</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="labelaryWidth">Largura (pol.)</label>
+                            <input id="labelaryWidth" type="number" min="0.1" step="0.01" value="4">
+                        </div>
+                        <div class="form-field">
+                            <label for="labelaryHeight">Altura (pol.)</label>
+                            <input id="labelaryHeight" type="number" min="0.1" step="0.01" value="6">
+                        </div>
+                        <div class="form-field">
+                            <label for="labelaryIndex">Página</label>
+                            <input id="labelaryIndex" type="number" min="1" step="1" value="1">
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn-secondary" type="button" onclick="gerarPreviaLabelary()">
+                            <i data-lucide="eye"></i>
+                            <span>Gerar prévia</span>
+                        </button>
+                        <button class="btn-primary" type="button" onclick="imprimirZplPreview()">
+                            <i data-lucide="printer"></i>
+                            <span>Imprimir</span>
+                        </button>
+                        <button class="btn-ghost" type="button" onclick="limparLabelary()">
+                            <i data-lucide="trash-2"></i>
+                            <span>Limpar</span>
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <label for="labelaryIndex">Pagina</label>
-                    <input id="labelaryIndex" type="number" min="1" step="1" value="1">
-                </div>
-            </div>
 
-            <div class="actions">
-                <button onclick="gerarPreviaLabelary()">Gerar preview</button>
-                <button onclick="imprimirZplPreview()">Imprimir ZPL</button>
-                <button class="btn-secondary" onclick="limparLabelary()">Limpar</button>
-            </div>
+                <aside class="preview-panel" aria-labelledby="preview-zpl-title">
+                    <header class="preview-header">
+                        <div>
+                            <span class="preview-kicker">Resultado</span>
+                            <h3 id="preview-zpl-title">Prévia renderizada</h3>
+                        </div>
+                        <span id="labelaryPreviewInfo" class="preview-meta">Sem conteúdo</span>
+                    </header>
+                    <div class="labelary-preview">
+                        <div id="labelaryEmpty" class="preview-empty">
+                            <i data-lucide="scan-line"></i>
+                            <span>Aguardando ZPL</span>
+                        </div>
+                        <img id="labelaryPreview" alt="Prévia ZPL" hidden>
+                    </div>
+                </aside>
+            </section>
+        </main>
 
-            <div class="labelary-preview">
-                <img id="labelaryPreview" alt="Preview ZPL" hidden>
-                <span id="labelaryPreviewInfo" class="preview-info"></span>
-            </div>
-        </section>
+        <div id="status" role="status" aria-live="polite" hidden></div>
 
-        <footer class="guia-configuracao no-print">
-            <hr>
-            <h3>⚙️ Configuração Obrigatória da Impressora</h3>
-            <p>Para evitar saltos de etiqueta e garantir a leitura do código, configure seu driver exatamente assim:</p>
+        <details class="guia-configuracao no-print">
+            <summary>
+                <span class="summary-title">
+                    <i data-lucide="settings"></i>
+                    <span>Ajuda com a impressora</span>
+                </span>
+                <span class="summary-action">
+                    Ver configuração
+                    <i data-lucide="chevron-down"></i>
+                </span>
+            </summary>
 
-            <div class="flex-guia">
+            <div class="guide-content">
                 <img src="imagens/config-driver.png" alt="Configuração do Driver Knup" class="img-manual">
 
                 <div class="check-list">
+                    <h3>Configuração recomendada</h3>
                     <ul>
-                        <li>✅ <b>Paper Size:</b> 80x25_2col</li>
-                        <li>✅ <b>Density:</b> 12 ou 15 (preto forte)</li>
-                        <li>✅ <b>Speed:</b> 5 (maior precisão)</li>
-                        <li>✅ <b>Verticality:</b> -1.00 mm (ajusta o topo)</li>
-                        <li>✅ <b>Escala no Navegador:</b> Tamanho Real (100%)</li>
+                        <li><i data-lucide="check-circle-2"></i><span><b>Paper Size:</b> 80x25_2col</span></li>
+                        <li><i data-lucide="check-circle-2"></i><span><b>Density:</b> 12 ou 15</span></li>
+                        <li><i data-lucide="check-circle-2"></i><span><b>Speed:</b> 5</span></li>
+                        <li><i data-lucide="check-circle-2"></i><span><b>Verticality:</b> -1.00 mm</span></li>
+                        <li><i data-lucide="check-circle-2"></i><span><b>Escala:</b> Tamanho real (100%)</span></li>
                     </ul>
-
-                    <div class="equipamentos">
-                        <h4>Equipamentos Recomendados:</h4>
-                        <p>Impressora Knup IM600 com etiqueta termica 40x25mm.</p>
-                    </div>
+                    <p class="equipment-note">
+                        <i data-lucide="printer-check"></i>
+                        Impressora Knup IM600 com etiqueta térmica 40x25 mm.
+                    </p>
                 </div>
             </div>
-        </footer>
-        <div id="status"></div>
+        </details>
     </div>
 
     <div id="print-area"></div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=20260630"></script>
 </body>
 
 </html>
